@@ -1,0 +1,77 @@
+name: Daily Content Update
+
+on:
+  schedule:
+    # Run every day at 08:00 UTC
+    - cron: "0 8 * * *"
+  workflow_dispatch: {}   # Allow manual trigger
+
+jobs:
+  daily-update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write   # needed to commit manifest files back to the repo
+
+    env:
+      # OpenAI / image generation
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      STABILITY_API_KEY: ${{ secrets.STABILITY_API_KEY }}
+      # Video generation
+      RUNWAY_API_KEY: ${{ secrets.RUNWAY_API_KEY }}
+      PICTORY_CLIENT_ID: ${{ secrets.PICTORY_CLIENT_ID }}
+      PICTORY_CLIENT_SECRET: ${{ secrets.PICTORY_CLIENT_SECRET }}
+      # Facebook / Instagram
+      FACEBOOK_ACCESS_TOKEN: ${{ secrets.FACEBOOK_ACCESS_TOKEN }}
+      FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+      INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
+      # TikTok
+      TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
+      TIKTOK_OPEN_ID: ${{ secrets.TIKTOK_OPEN_ID }}
+      # YouTube
+      YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+      YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+      YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+      # Pinterest
+      PINTEREST_ACCESS_TOKEN: ${{ secrets.PINTEREST_ACCESS_TOKEN }}
+      PINTEREST_BOARD_ID: ${{ secrets.PINTEREST_BOARD_ID }}
+      # Output paths
+      OUTPUT_DIR: output
+      REPORTS_DIR: reports
+      # Optional: set after uploading generated image to a CDN
+      PUBLIC_IMAGE_URL: ${{ secrets.PUBLIC_IMAGE_URL }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run daily update
+        run: python daily_update.py
+
+      - name: Upload generated output
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: daily-output-${{ github.run_id }}
+          path: |
+            output/
+            reports/manifest_*.json
+          retention-days: 7
+
+      - name: Commit reports to repository
+        if: success()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add reports/
+          git diff --cached --quiet || git commit -m "chore: daily manifest $(date -u +%Y-%m-%d)"
+          git push
