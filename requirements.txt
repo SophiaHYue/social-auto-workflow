@@ -1,0 +1,19 @@
+# ── Core / HTTP ───────────────────────────────────────────────
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# ── OpenAI (DALL·E image generation + text generation) ────────
+openai>=1.30.0
+
+# ── Google / YouTube Data API v3 ──────────────────────────────
+google-auth>=2.29.0
+google-auth-oauthlib>=1.2.0
+google-api-python-client>=2.130.0
+
+# ── Video processing (local MoviePy fallback) ─────────────────
+moviepy>=1.0.3
+imageio>=2.34.0
+imageio-ffmpeg>=0.4.9
+
+# ── Data / reporting ──────────────────────────────────────────
+# (csv / json are stdlib; no extra deps needed for reports)
